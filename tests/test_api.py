@@ -12,6 +12,9 @@ def client():
     yield app_module.app.test_client()
     app_module.inventory[:] = original
 
+def api_down(*args):
+    raise requests.ConnectionError("API is down")
+
 def test_get_all_items(client):
     assert len(client.get("/inventory").get_json()) == 3
 
@@ -50,8 +53,7 @@ def test_lookup_name(client, monkeypatch):
 
 def test_lookup_errors(client, monkeypatch):
     assert client.get("/lookup").status_code == 400
-    monkeypatch.setattr(off_client, "fetch_by_barcode", lambda b: None)
+    monkeypatch.setattr(off_client, "fetch_by_barcode", api_down)
     assert client.get("/lookup?barcode=1").status_code == 502
-
 
 

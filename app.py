@@ -95,22 +95,20 @@ def delete_item(item_id):
     return jsonify({"message": "Item deleted"}), 200
 
 @app.get("/lookup")
-def lookup_product():
-    """Lookup a product by barcode or name using the Open Food Facts API."""
+def lookup():
     barcode = request.args.get("barcode")
     name = request.args.get("name")
-    if barcode:
-        product = off_client.fetch_by_barcode(barcode)
-        if product is None:
-            return jsonify({"error": "Product not found"}), 400
-        return jsonify(product)
-    elif name:
-        products = off_client.search_by_name(name)
-        if not products:
-            return jsonify({"error": "No products found"}), 404
-        return jsonify(products)
-    else:
-        return jsonify({"error": "Please provide a barcode or name"}), 502
-
+    if not barcode and not name:
+        return jsonify({"error": "Provide ?barcode= or ?name="}), 400
+    try:
+        if barcode:
+            product = off_client.fetch_by_barcode(barcode)
+            if product is None:
+                return jsonify({"error": "Product not found"}), 404
+            return jsonify({"status": 1, "product": product})
+        return jsonify({"products": off_client.search_by_name(name)})
+    except requests.RequestException:
+        return jsonify({"error": "OpenFoodFacts is unavailable"}), 502
+    
 if __name__ == "__main__":  
     app.run(debug=True)
