@@ -109,6 +109,26 @@ def lookup():
         return jsonify({"products": off_client.search_by_name(name)})
     except requests.RequestException:
         return jsonify({"error": "OpenFoodFacts is unavailable"}), 502
-    
+
+@app.post("/inventory/import")
+def import_item():
+    """Fetch product from client and add to inventory."""
+    data = request.get_json(silent=True)
+    error = check(data, ["barcode", "price", "stock"])
+    if error:
+        return jsonify({"error": error}), 400
+    try:
+        product = off_client.fetch_by_barcode(data["barcode"])
+    except requests.RequestException:
+        return jsonify({"error": "OpenFoodFacts is unavailable"}), 502
+    if product is None:
+        return jsonify({"error": "Product not found on OpenFoodFacts"}), 404
+    item = {"id": next_id(), "name": product["product_name"] or "Unnamed product",
+            "price": data["price"], "stock": data["stock"],
+            "barcode": data["barcode"],
+            "details": {"status": 1, "product": product}}
+    inventory.append(item)
+    return jsonify(item), 201
+
 if __name__ == "__main__":  
     app.run(debug=True)
