@@ -1,5 +1,7 @@
 """Simple FlasK Rest API for managing a list of items."""
 from flask import Flask, jsonify, request
+import requests
+import off_client
 
 app = Flask(__name__)
 
@@ -92,5 +94,21 @@ def delete_item(item_id):
     inventory.remove(item)
     return jsonify({"message": "Item deleted"}), 200
 
+@app.get("/lookup")
+def lookup():
+    barcode = request.args.get("barcode")
+    name = request.args.get("name")
+    if not barcode and not name:
+        return jsonify({"error": "Provide ?barcode= or ?name="}), 400
+    try:
+        if barcode:
+            product = off_client.fetch_by_barcode(barcode)
+            if product is None:
+                return jsonify({"error": "Product not found"}), 404
+            return jsonify({"status": 1, "product": product})
+        return jsonify({"products": off_client.search_by_name(name)})
+    except requests.RequestException:
+        return jsonify({"error": "OpenFoodFacts is unavailable"}), 502
+    
 if __name__ == "__main__":  
     app.run(debug=True)
