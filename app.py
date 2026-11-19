@@ -69,3 +69,25 @@ def add_item():
     }
     inventory.append(item)
     return jsonify(item), 201
+
+@app.patch("/inventory/<int:item_id>")
+def update_item(item_id):
+    item = find_item(item_id)
+    if item is None:
+        return jsonify({"error": "Item not found"}), 404
+    data = request.get_json()
+    error = check(data)
+    if error:
+        return jsonify({"error": error}), 400
+    for field in ("name", "price", "stock", "barcode", "details"):
+        if field in data:
+            item[field] = data[field]
+    return jsonify(item)
+
+@app.delete("/inventory/<int:item_id>")
+def delete_item(item_id):
+    item = find_item(item_id)
+    if item is None:
+        return jsonify({"error": "Item not found"}), 404
+    inventory.remove(item)
+    return jsonify({"message": "Item deleted"})
