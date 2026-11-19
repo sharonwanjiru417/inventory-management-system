@@ -56,4 +56,17 @@ def test_lookup_errors(client, monkeypatch):
     monkeypatch.setattr(off_client, "fetch_by_barcode", api_down)
     assert client.get("/lookup?barcode=1").status_code == 502
 
+def test_import_success(client, monkeypatch):
+    monkeypatch.setattr(off_client, "fetch_by_barcode", lambda b: PRODUCT)
+    r = client.post("/inventory/import", json={"barcode": "1", "price": 4.99, "stock": 12})
+    assert r.status_code == 201 and r.get_json()["name"] == "Nutella"
+    assert len(client.get("/inventory").get_json()) == 4     # added to the array
+
+
+def test_import_errors(client, monkeypatch):
+    assert client.post("/inventory/import", json={"price": 1, "stock": 1}).status_code == 400
+    monkeypatch.setattr(off_client, "fetch_by_barcode", lambda b: None)
+    assert client.post("/inventory/import", json={"barcode": "1", "price": 1, "stock": 1}).status_code == 404
+    monkeypatch.setattr(off_client, "fetch_by_barcode", api_down)
+    assert client.post("/inventory/import", json={"barcode": "1", "price": 1, "stock": 1}).status_code == 502
 
