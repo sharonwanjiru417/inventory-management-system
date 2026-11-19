@@ -90,4 +90,6 @@ def delete_item(item_id):
     if item is None:
         return jsonify({"error": "Item not found"}), 404
     inventory.remove(item)
-    return jsonify({"message": "Item deleted"})
+    return jsonify({"message": "Item deleted"}), 200
+
+if __name__ == "__main__":  
