@@ -1,5 +1,10 @@
 import pytest
+import requests
 import app as app_module
+import off_client
+
+PRODUCT = {"product_name": "Nutella", "brands": "Ferrero",
+           "ingredients_text": "sugar", "barcode": "1"}
 
 @pytest.fixture
 def client():
@@ -32,6 +37,21 @@ def test_delete(client):
     assert client.delete("/inventory/1").status_code == 200
     assert client.get("/inventory/1").status_code == 404
     assert client.delete("/inventory/1").status_code == 404
+
+def test_lookup_barcode(client, monkeypatch):
+    monkeypatch.setattr(off_client, "fetch_by_barcode", lambda b: PRODUCT)
+    assert client.get("/lookup?barcode=1").get_json()["product"]["brands"] == "Ferrero"
+
+
+def test_lookup_name(client, monkeypatch):
+    monkeypatch.setattr(off_client, "search_by_name", lambda n: [PRODUCT])
+    assert len(client.get("/lookup?name=nutella").get_json()["products"]) == 1
+
+
+def test_lookup_errors(client, monkeypatch):
+    assert client.get("/lookup").status_code == 400
+    monkeypatch.setattr(off_client, "fetch_by_barcode", lambda b: None)
+    assert client.get("/lookup?barcode=1").status_code == 502
 
 
 
