@@ -14,11 +14,10 @@ def test_get_one(client):
     assert client.get("/inventory/1").get_json()["name"] == "Organic Almond Milk"
     assert client.get("/inventory/999").status_code == 404
 
-def test_post_invalid(client):
-    response = client.post("/inventory", json={"name": "New Item"})
-    assert response.status_code == 400
-    assert "Missing field" in response.get_json()["error"]
-
+def test_post(client):
+    response = client.post("/inventory", json={"name": "Tea", "price": 2.0, "stock": 10})
+    assert response.status_code == 201 and response.get_json()["id"] == 4
+    
 def test_post_invalid(client):
     assert client.post("/inventory", json={"name": "New Item"}).status_code == 400
     assert "Missing field" in client.post("/inventory", json={"name": "New Item"}).get_json()["error"]
