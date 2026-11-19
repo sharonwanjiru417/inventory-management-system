@@ -52,3 +52,20 @@ def get_item(item_id):
     if item is None:
         return jsonify({"error": "Item not found"}), 404
     return jsonify(item)
+
+@app.post("/inventory")
+def add_item():
+    data = request.get_json()
+    error = check(data, required=("name", "price", "stock"))
+    if error:
+        return jsonify({"error": error}), 400
+    item = {
+        "id": next_id(),
+        "name": data["name"],
+        "price": data["price"],
+        "stock": data["stock"],
+        "barcode": data.get("barcode", ""),
+        "details": data.get("details", {})
+    }
+    inventory.append(item)
+    return jsonify(item), 201
